@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from pydantic import JsonValue
 
 from backend.store import database, get, initialize, listing
+from backend.workflow import Decision, Payment, SignOff, decide, pay, sign_off
 
 
 @asynccontextmanager
@@ -78,3 +79,21 @@ def instructions() -> JsonValue:
     """Read the agent instructions."""
     with database() as db:
         return get(db, "text", "instructions")
+
+
+@app.post("/api/claims/{claim_id}/decision", operation_id="record_decision")
+def decision(claim_id: str, body: Decision) -> dict[str, JsonValue]:
+    """Record the agent's coverage decision."""
+    return decide(claim_id, body)
+
+
+@app.post("/api/claims/{claim_id}/sign-off", operation_id="sign_off")
+def approval(claim_id: str, body: SignOff) -> dict[str, JsonValue]:
+    """Record a handler's sign-off."""
+    return sign_off(claim_id, body)
+
+
+@app.post("/api/claims/{claim_id}/payment", operation_id="pay_claim")
+def payment(claim_id: str, body: Payment) -> dict[str, JsonValue]:
+    """Request an exact simulated payment."""
+    return pay(claim_id, body)

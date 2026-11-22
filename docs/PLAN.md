@@ -87,26 +87,26 @@ handler sign-off and payment so the approval limit is a backend guarantee.
 
 Success criteria:
 
-- [ ] `POST /api/claims/{claim_id}/decision` accepts a validated outcome, explicit
+- [x] `POST /api/claims/{claim_id}/decision` accepts a validated outcome, explicit
   payout, calculation, explanation, policy references and thread ID for an
   active run. Decline and refer require a zero payout; amounts cannot be
   negative. Invalid outcomes, amounts or missing fields return 422.
-- [ ] Tests verify approval at $1,000 can proceed without sign-off, while
+- [x] Tests verify approval at $1,000 can proceed without sign-off, while
   $1,000.01 and larger approvals enter `waiting_for_sign_off`. Decline and refer
   enter `decided` without a payment. Approved claims become `decided` after
   simulated payment succeeds.
-- [ ] `POST /api/claims/{claim_id}/payment`, with a required amount, returns 409
+- [x] `POST /api/claims/{claim_id}/payment`, with a required amount, returns 409
   for an unsigned $1,250 approval and creates no payment record. Tests call the
   endpoint directly, independently of the agent and UI.
-- [ ] `POST /api/claims/{claim_id}/sign-off`, with a required handler ID, records
+- [x] `POST /api/claims/{claim_id}/sign-off`, with a required handler ID, records
   the eligible handler and timestamp. Unknown handlers fail; ineligible handlers
   and claims in the wrong state cannot sign off. The $1,250 payment succeeds
   only after valid sign-off, returning a persisted simulated payment record.
-- [ ] Tests reject partial amounts, excess amounts, payment before a decision,
+- [x] Tests reject partial amounts, excess amounts, payment before a decision,
   payment for decline or refer, repeated sign-offs, duplicate payments and
   replacement of completed decisions. Concurrent payment requests record at
   most one payment.
-- [ ] Decisions, sign-offs and payments survive database reopening. The API
+- [x] Decisions, sign-offs and payments survive database reopening. The API
   exposes the decision and payment state separately, including who signed off.
 
 ## Phase 3: Agent execution and progress API

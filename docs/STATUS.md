@@ -1,7 +1,8 @@
 # Status
 
-Phase 1 complete: SQLite seed persistence and business read API. Read API tests,
-lint and Python types pass (96% Python coverage). Pilot implementation continues.
+Phases 1–2 complete: persistent business API, decisions, handler sign-off and
+transactional simulated payments. Ten Python tests pass with 99% coverage.
+Pilot implementation continues.
 
 ## Local checks
 
