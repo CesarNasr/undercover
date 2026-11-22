@@ -64,11 +64,18 @@ payments, customer messages, sign-in, cloud resources or later-day features exis
 
 ## Local checks
 
-- The accessibility lint plugin uses version 0.2 or later for ESLint flat config
-  compatibility. Avoid `npm audit fix --force`, which can downgrade it to an
-  incompatible version.
+- SonarJS 4.2.2 and the accessibility lint plugin 0.2.0 are pinned for ESLint
+  10 compatibility. Older SonarJS 2.x uses the removed `eslintrc` Linter API;
+  accessibility plugin 0.1.x also targets older ESLint versions. Avoid
+  `npm audit fix --force`, which can downgrade these plugins incompatibly.
+  Use `npm ci` to reproduce the checked-in dependency versions.
 - Playwright starts its dashboard on port 5174 and its isolated backend on 8000;
   stop a development backend on 8000 before running browser checks.
 - Dependency setup reports six moderate advisories and no high or critical
   advisories. Forced fixes propose incompatible plugin downgrades; these remain
   unresolved.
+
+Lint dependency repair: Python and frontend checks pass with the pinned plugins.
+The standard full command was blocked at browser startup by an existing server
+on port 8000; all five browser scenarios passed with temporary configurations
+on backend port 8001. The existing server was left running.
