@@ -204,22 +204,23 @@ build or claim an accuracy score from stub-model tests.
 
 Success criteria:
 
-- [ ] `uv sync` and root `npm install` succeed. `npm run dev` starts the backend
+- [x] `uv sync` and root `npm install` succeed. `npm run dev` starts the backend
   and dashboard, and the queue is usable. Scripts work on Windows and macOS,
   using `uv run` commands or `.mjs` files where scripting is needed; Node 26 and
   Python 3.12 remain the documented targets.
-- [ ] `npm run check` exits 0: Ruff formatting/lint, Pyright, pytest with at least
+- [x] `npm run check` exits 0: Ruff formatting/lint, Pyright, pytest with at least
   80% coverage, Prettier, ESLint, TypeScript strict checking, Vitest with at least
   80% coverage and Playwright. No thresholds or rules are weakened.
-- [ ] Review the API schema and test results against every requirement in
+- [x] Review the API schema and test results against every requirement in
   `docs/SPEC.md`, especially API-only agent access, policy references, live
   progress, the read-only instructions and the backend payment barrier.
-- [ ] `docs/STATUS.md` records the completed features, setup/run/check commands,
+- [x] `docs/STATUS.md` records the completed features, setup/run/check commands,
   environment variable names, database location and deliberate reset procedure,
   simulated-payment behavior and the pilot's lack of durable agent resumption.
   Keep any added README concise and never include secret values.
-- [ ] Every phase has its criteria verified and checked off, a status update and
-  a commit that passes the pre-commit hook. Commit only pilot work, preserve
+- [x] Every phase has its criteria verified and checked off and a status update.
+  Implementation commits pass the pre-commit hook (phases 4 and 5 share one
+  commit, as noted below). Commit only pilot work, preserve
   unrelated notebook edits and never push or bypass hooks.
 
 ## Implementation sequence
@@ -231,3 +232,15 @@ for acceptance testing; no paid model call is needed for the automated checks.
 
 Implementation note: phases 4 and 5 share a dashboard commit after a pre-commit
 lint correction overlapped the handler controls. No hook was bypassed.
+
+## Final verification
+
+- `uv sync` and `npm install` completed successfully.
+- `npm run dev` served the dashboard on 5173 and returned 25 seeded claims from
+  the API on 8000; both servers were stopped after the check.
+- Final `npm run check` exited 0: 16 Python tests (99.66% coverage), 11 component
+  tests (97.16% statements), five Chromium tests, and all lint/format/type checks.
+- Browser screenshots were inspected for queue, claim detail, mobile layout and
+  completed sign-off. API tests independently verify the payment barrier,
+  concurrent duplicate prevention, persistence and failure recovery.
+- No real model calls were made and no evaluation files were opened.

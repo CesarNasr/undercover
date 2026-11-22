@@ -49,6 +49,7 @@ Handler selection attributes sign-off; there is no authentication in this pilot.
 npm run check
 ```
 
+Final `npm run check` exited 0 on November 22, 2026.
 The suite includes 16 Python tests, 11 component tests and five Chromium
 scenarios. Python coverage is 99.66%; dashboard statement coverage is 97.16%.
 The browser suite starts an isolated temporary database and a scripted LangChain
