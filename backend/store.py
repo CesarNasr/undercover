@@ -3,7 +3,7 @@
 import json
 import os
 import sqlite3
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from pathlib import Path
 from typing import cast
 
@@ -29,7 +29,7 @@ sign-off is required. Never split a payment or attempt to sign off yourself.
 def database():
     """Open a transaction with serialized writes."""
     path = Path(os.getenv("UNDERCOVER_DB", "data/pilot.sqlite3"))
-    with sqlite3.connect(path, timeout=10) as connection:
+    with closing(sqlite3.connect(path, timeout=10)) as connection, connection:
         connection.execute("BEGIN IMMEDIATE")
         yield connection
 
@@ -47,7 +47,9 @@ def initialize() -> None:
             ("customers", "customer_id"),
             ("handlers", "handler_id"),
         ):
-            for record in json.loads((DATA / f"{kind}.json").read_text()):
+            for record in json.loads(
+                (DATA / f"{kind}.json").read_text(encoding="utf-8")
+            ):
                 if kind == "claims":
                     record.update(
                         status="waiting",
@@ -59,8 +61,18 @@ def initialize() -> None:
                     )
                 put_missing(db, kind, record[key], record)
         for name in ("plans", "company"):
-            put_missing(db, name, name, json.loads((DATA / f"{name}.json").read_text()))
-        put_missing(db, "text", "wording", (DATA / "policy_wording.md").read_text())
+            put_missing(
+                db,
+                name,
+                name,
+                json.loads((DATA / f"{name}.json").read_text(encoding="utf-8")),
+            )
+        put_missing(
+            db,
+            "text",
+            "wording",
+            (DATA / "policy_wording.md").read_text(encoding="utf-8"),
+        )
         put_missing(db, "text", "instructions", INSTRUCTIONS)
 
 

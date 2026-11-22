@@ -1,8 +1,9 @@
+import json
 from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
-from backend.store import database, record, save
+from backend.store import database, initialize, record, save
 
 
 def active():
@@ -76,3 +77,30 @@ def test_non_payment(client, outcome):
     )
     assert client.post(BASE + "/payment", json={"amount": "0"}).status_code == 409
     assert client.post(BASE + "/payment", json={"amount": "-1"}).status_code == 422
+
+
+def test_signoff_permissions_and_persistence(client):
+
+    active()
+    assert client.post(BASE + "/decision", json=payload()).status_code == 200
+    with database() as db:
+        handler = record(db, "handlers", "HND-01")
+        handler["can_approve_over_limit"] = False
+        db.execute(
+            "UPDATE records SET body=? WHERE kind='handlers' AND id='HND-01'",
+            (json.dumps(handler),),
+        )
+    assert (
+        client.post(BASE + "/sign-off", json={"handler_id": "HND-01"}).status_code
+        == 409
+    )
+    assert (
+        client.post(BASE + "/sign-off", json={"handler_id": "HND-02"}).status_code
+        == 200
+    )
+    assert client.post(BASE + "/payment", json={"amount": "1250"}).status_code == 200
+    initialize()
+    saved = client.get(BASE).json()
+    assert saved["decision"]["payout"] == "1250"
+    assert saved["sign_off"]["handler_id"] == "HND-02"
+    assert saved["payment"]["amount"] == "1250"

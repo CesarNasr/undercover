@@ -152,22 +152,22 @@ as the entry point, a full claim detail view and a read-only instructions view.
 
 Success criteria:
 
-- [ ] The queue displays all 25 claims with ID, customer, summary, amount and
+- [x] The queue displays all 25 claims with ID, customer, summary, amount and
   clearly labeled state. Selecting a claim shows its full story, items,
   supporting documents, policy, plan, add-ons and customer claim history.
-- [ ] Claim detail displays outcome, payout calculation, explanation, policy
+- [x] Claim detail displays outcome, payout calculation, explanation, policy
   references, payment state and sign-off details when present. Missing decisions
   are shown as awaiting processing rather than as zero-dollar decisions.
-- [ ] The instructions view shows exactly the instructions returned by the
+- [x] The instructions view shows exactly the instructions returned by the
   backend and offers no editing controls.
-- [ ] Loading, empty and failed-request states are understandable. Component
+- [x] Loading, empty and failed-request states are understandable. Component
   tests cover these states, navigation and claim content with mocked HTTP calls.
-- [ ] Browser inspection with the Playwright MCP server verifies queue, detail
+- [x] Browser inspection with the Playwright MCP server verifies queue, detail
   and instructions views at desktop and narrow mobile widths, with keyboard
   navigation, visible focus, readable labels and no horizontal overflow. If the
   MCP server is unavailable, use the repository's Playwright runner and inspect
   its screenshots for the same checks.
-- [ ] Visual inspection confirms the fonts, colors, rounded panels and plain
+- [x] Visual inspection confirms the fonts, colors, rounded panels and plain
   labels in `docs/BRAND.md`. Amounts use US dollar formatting such as $1,250.00;
   status meaning is conveyed with text as well as color.
 
@@ -178,21 +178,21 @@ claim is active so handlers can see progress without refreshing the page.
 
 Success criteria:
 
-- [ ] A handler can start a waiting claim. The UI shows `in_progress`, disables
+- [x] A handler can start a waiting claim. The UI shows `in_progress`, disables
   duplicate starts and appends tool activity while the stub run is still active.
   On completion it refreshes the decision and queue state; polling stops or is
   cleaned up when the view is left.
-- [ ] An approved payout over $1,000 displays `waiting_for_sign_off`, its amount
+- [x] An approved payout over $1,000 displays `waiting_for_sign_off`, its amount
   and an eligible-handler selector. Signing off then requesting simulated
   payment moves it to `decided` and displays the recorded handler and payment.
-- [ ] Component tests verify actions, polling cleanup and API error handling.
+- [x] Component tests verify actions, polling cleanup and API error handling.
   Failed actions retain the saved claim and provide an explicit retry where
   allowed. A payment failure after sign-off can be retried without a new run.
-- [ ] Playwright tests with a stub agent and an isolated seeded backend exercise
+- [x] Playwright tests with a stub agent and an isolated seeded backend exercise
   a small approval and payment, decline, refer, and over-limit approval followed
   by sign-off and payment. The over-limit case asserts no payment exists before
   sign-off; refreshing preserves the final state.
-- [ ] Browser inspection verifies progress appears before completion, action
+- [x] Browser inspection verifies progress appears before completion, action
   labels and disabled states are clear, and error/retry behavior is usable.
   End-to-end tests make no OpenRouter requests.
 
@@ -224,8 +224,10 @@ Success criteria:
 
 ## Implementation sequence
 
-This document is a plan only. Begin implementation after the student's review
-and request to implement. Build phases in order, add tests with each change,
+Implementation was authorized after review. Build phases in order, add tests with each change,
 verify each criterion, update this plan and `docs/STATUS.md`, and commit each
 phase as required by `docs/PROCESS.md`. Use synthetic fixtures and stub models
 for acceptance testing; no paid model call is needed for the automated checks.
+
+Implementation note: phases 4 and 5 share a dashboard commit after a pre-commit
+lint correction overlapped the handler controls. No hook was bypassed.

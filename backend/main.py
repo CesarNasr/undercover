@@ -40,7 +40,12 @@ def health() -> dict[str, str]:
 def claims() -> list[JsonValue]:
     """List the claims queue."""
     with database() as db:
-        return listing(db, "claims")
+        queue = listing(db, "claims")
+        for item in queue:
+            if isinstance(item, dict):
+                customer = record(db, "customers", str(item["customer_id"]))
+                item["customer_name"] = customer["name"]
+        return queue
 
 
 @app.get("/api/claims/{claim_id}", operation_id="get_claim")

@@ -87,7 +87,9 @@ def decide(claim_id: str, body: Decision) -> dict[str, JsonValue]:
         claim["decision"] = body.model_dump(mode="json")
         company = record(db, "company", "company")
         over_limit = body.payout > Decimal(str(company["payout_approval_limit"]))
-        claim["status"] = "waiting_for_sign_off" if over_limit else "decided"
+        claim["status"] = "decided"
+        if body.outcome == "approve":
+            claim["status"] = "waiting_for_sign_off" if over_limit else "in_progress"
         event(claim, f"Decision recorded: {body.outcome}")
         save(db, claim)
         return claim
@@ -114,7 +116,6 @@ def pay(claim_id: str, body: Payment) -> dict[str, JsonValue]:
     with database() as db:
         claim = record(db, "claims", claim_id)
         decision = claim["decision"]
-        require(isinstance(decision, dict), "No approved decision")
         if not isinstance(decision, dict):
             raise HTTPException(409, "No decision")
         require(decision["outcome"] == "approve", "Claim is not approved")

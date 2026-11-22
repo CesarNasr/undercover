@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from backend.store import database, get, initialize
 
 
@@ -25,3 +27,25 @@ def test_records(client):
     operations = [op for path in schema["paths"].values() for op in path.values()]
     assert len({op["operationId"] for op in operations}) == len(operations)
     assert all(p["required"] for op in operations for p in op.get("parameters", []))
+
+
+def test_seed_allowlist(client, monkeypatch):
+
+    paths = []
+    original = Path.read_text
+
+    def read(path, *args, **kwargs):
+        paths.append(path.name)
+        return original(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", read)
+    initialize()
+    assert set(paths) == {
+        "claims.json",
+        "policies.json",
+        "customers.json",
+        "handlers.json",
+        "company.json",
+        "plans.json",
+        "policy_wording.md",
+    }

@@ -34,6 +34,8 @@ def finish(claim_id: str, message: str) -> None:
         claim = record(db, "claims", claim_id)
         if claim["decision"] is None:
             claim["status"] = "waiting"
+        elif claim["status"] == "in_progress":
+            claim["status"] = "decided"
         event(claim, message)
         save(db, claim)
 

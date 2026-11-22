@@ -1,5 +1,6 @@
 from backend import runs
 from backend.store import initialize
+from backend.tests.test_workflow import BASE, payload
 
 
 def test_runs(client, monkeypatch):
@@ -26,3 +27,17 @@ def test_runs(client, monkeypatch):
     monkeypatch.setattr(runs, "run", fail)
     runs.execute("CLM-1001", "four")
     assert "failed" in client.get(base + "/events").json()[-1]["message"]
+
+
+def test_post_decision_failure_preserves_payment_retry(client, monkeypatch):
+
+    runs.start("CLM-1001", "test")
+    assert client.post(BASE + "/decision", json=payload("420")).status_code == 200
+
+    def fail(*_):
+        raise RuntimeError("payment unavailable")
+
+    monkeypatch.setattr(runs, "run", fail)
+    runs.execute("CLM-1001", "test")
+    assert client.get(BASE).json()["decision"]["payout"] == "420"
+    assert client.post(BASE + "/payment", json={"amount": "420"}).status_code == 200
