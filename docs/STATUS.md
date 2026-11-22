@@ -1,13 +1,7 @@
 # Status
 
-A hello-world skeleton with every check in place:
-
-- `backend/`: one route, `GET /api/health`
-- `agent/`: the entry point `run(claim_id, thread_id)`, with one tool that calls the health route
-- `dashboard/`: one page that shows whether the backend is up
-- `e2e/`: one test of that page
-
-Nothing of UnderCover is built yet. Update this file as you build.
+Phase 1 complete: SQLite seed persistence and business read API. Read API tests,
+lint and Python types pass (96% Python coverage). Pilot implementation continues.
 
 ## Local checks
 

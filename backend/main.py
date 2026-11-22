@@ -1,11 +1,80 @@
 """The UnderCover backend."""
 
-from fastapi import FastAPI
+from contextlib import asynccontextmanager
 
-app = FastAPI(title="UnderCover")
+from fastapi import FastAPI
+from pydantic import JsonValue
+
+from backend.store import database, get, initialize, listing
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    """Initialize persistent business data."""
+    initialize()
+    yield
+
+
+app = FastAPI(title="UnderCover", lifespan=lifespan)
 
 
 @app.get("/api/health", operation_id="health")
 def health() -> dict[str, str]:
     """Check that the backend is running."""
     return {"status": "ok"}
+
+
+@app.get("/api/claims", operation_id="list_claims")
+def claims() -> list[JsonValue]:
+    """List the claims queue."""
+    with database() as db:
+        return listing(db, "claims")
+
+
+@app.get("/api/claims/{claim_id}", operation_id="get_claim")
+def claim(claim_id: str) -> JsonValue:
+    """Read a full claim."""
+    with database() as db:
+        return get(db, "claims", claim_id)
+
+
+@app.get("/api/policies/{policy_id}", operation_id="get_policy")
+def policy(policy_id: str) -> JsonValue:
+    """Read a policy."""
+    with database() as db:
+        return get(db, "policies", policy_id)
+
+
+@app.get("/api/customers/{customer_id}", operation_id="get_customer")
+def customer(customer_id: str) -> JsonValue:
+    """Read a customer and claim history."""
+    with database() as db:
+        return get(db, "customers", customer_id)
+
+
+@app.get("/api/plans", operation_id="get_plans")
+def plans() -> JsonValue:
+    """Read plan limits and add-ons."""
+    with database() as db:
+        return get(db, "plans", "plans")
+
+
+@app.get("/api/handlers", operation_id="list_handlers")
+def handlers() -> list[JsonValue]:
+    """List handlers eligible for sign-off."""
+    with database() as db:
+        return listing(db, "handlers")
+
+
+@app.get("/api/policy-wording", operation_id="get_wording")
+def wording() -> JsonValue:
+    """Read the policy wording."""
+    with database() as db:
+        return get(db, "text", "wording")
+
+
+@app.get("/api/instructions", operation_id="get_instructions")
+def instructions() -> JsonValue:
+    """Read the agent instructions."""
+    with database() as db:
+        return get(db, "text", "instructions")
