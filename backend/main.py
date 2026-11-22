@@ -2,17 +2,28 @@
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import BackgroundTasks, FastAPI
 from pydantic import JsonValue
 
-from backend.store import database, get, initialize, listing
-from backend.workflow import Decision, Payment, SignOff, decide, pay, sign_off
+from backend.runs import execute, progress, recover, start
+from backend.store import database, get, initialize, listing, record
+from backend.workflow import (
+    Decision,
+    Event,
+    Payment,
+    RunRequest,
+    SignOff,
+    decide,
+    pay,
+    sign_off,
+)
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     """Initialize persistent business data."""
     initialize()
+    recover()
     yield
 
 
@@ -97,3 +108,26 @@ def approval(claim_id: str, body: SignOff) -> dict[str, JsonValue]:
 def payment(claim_id: str, body: Payment) -> dict[str, JsonValue]:
     """Request an exact simulated payment."""
     return pay(claim_id, body)
+
+
+@app.post("/api/claims/{claim_id}/runs", operation_id="start_run", status_code=202)
+def start_run(
+    claim_id: str, body: RunRequest, tasks: BackgroundTasks
+) -> dict[str, JsonValue]:
+    """Start background processing of a waiting claim."""
+    result = start(claim_id, body.thread_id)
+    tasks.add_task(execute, claim_id, body.thread_id)
+    return result
+
+
+@app.get("/api/claims/{claim_id}/events", operation_id="get_events")
+def events(claim_id: str) -> JsonValue:
+    """Read operational progress for a claim."""
+    with database() as db:
+        return record(db, "claims", claim_id)["events"]
+
+
+@app.post("/api/claims/{claim_id}/events", operation_id="record_event")
+def add_event(claim_id: str, body: Event) -> dict[str, JsonValue]:
+    """Record a tool activity event."""
+    return progress(claim_id, body)

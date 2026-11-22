@@ -117,28 +117,28 @@ decisions in the agent and workflow enforcement in the backend.
 
 Success criteria:
 
-- [ ] The agent fetches its instructions and claim context over HTTP, including
+- [x] The agent fetches its instructions and claim context over HTTP, including
   policy, plan, customer history and policy wording. Tests inspect tool calls
   and supplied context to verify there is no direct file/database access or
   evaluation/manual content.
-- [ ] Instructions cover policy-based decisions, limits, waiting periods,
+- [x] Instructions cover policy-based decisions, limits, waiting periods,
   deductions, add-ons and missing evidence. The agent records approve, decline
   or refer, an explicit payout and calculation, and a two- or three-sentence
   explanation with policy section references. No manual-only rules are added.
-- [ ] Stub-model integration tests exercise approve, decline and refer. An
+- [x] Stub-model integration tests exercise approve, decline and refer. An
   approval within the limit is paid through the payment API; an over-limit
   approval remains unpaid awaiting sign-off, including when the stub attempts
   payment anyway.
-- [ ] Model configuration tests verify `openai/gpt-6-luna` with low reasoning
+- [x] Model configuration tests verify `openai/gpt-6-luna` with low reasoning
   effort by default and the `MODEL_NAME` override, including `openrouter/free`.
   All automated tests run without an API key or real model calls.
-- [ ] `POST /api/claims/{claim_id}/runs`, with a required thread ID, returns 202
+- [x] `POST /api/claims/{claim_id}/runs`, with a required thread ID, returns 202
   and starts background work without blocking the response. Starting a duplicate
   active run or running a completed claim returns 409; unknown claims return 404.
-- [ ] `GET /api/claims/{claim_id}/events` returns ordered, timestamped activity
+- [x] `GET /api/claims/{claim_id}/events` returns ordered, timestamped activity
   for the correct claim and thread. Tests observe `in_progress` and tool events
   before the run completes, followed by the persisted decision.
-- [ ] Model or backend failures produce a visible error event and leave no
+- [x] Model or backend failures produce a visible error event and leave no
   fabricated decision or payment. A failure before decision submission returns
   the claim to `waiting` for an explicit retry. A failure after approval preserves
   it and permits payment retry without rerunning the decision. A backend restart

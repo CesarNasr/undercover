@@ -1,7 +1,8 @@
 # Status
 
-Phases 1–2 complete: persistent business API, decisions, handler sign-off and
-transactional simulated payments. Ten Python tests pass with 99% coverage.
+Phases 1–3 complete: API-only agent, background runs, progress events and restart
+recovery, plus persistent business API, decisions, handler sign-off and
+transactional simulated payments. Thirteen Python tests pass with 99% coverage.
 Pilot implementation continues.
 
 ## Local checks
