@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, label, money, type Claim } from "./api";
+import { AgentInstructions } from "./AgentInstructions";
 import { ClaimDetail } from "./ClaimDetail";
 import "./style.css";
 
@@ -7,16 +8,22 @@ export function App() {
   const [claims, setClaims] = useState<Claim[]>();
   const [selected, setSelected] = useState("");
   const [instructions, setInstructions] = useState<string>();
+  const [wording, setWording] = useState<string>();
   const [view, setView] = useState("queue");
   const [revision, setRevision] = useState(0);
   const [error, setError] = useState("");
   useEffect(() => {
     let active = true;
-    void Promise.all([api<Claim[]>("claims"), api<string>("instructions")])
-      .then(([queue, text]) => {
+    void Promise.all([
+      api<Claim[]>("claims"),
+      api<string>("instructions"),
+      api<string>("policy-wording"),
+    ])
+      .then(([queue, text, policyWording]) => {
         if (active) {
           setClaims(queue);
           setInstructions(text);
+          setWording(policyWording);
         }
       })
       .catch((err: unknown) => {
@@ -66,11 +73,7 @@ export function App() {
           </p>
         )}
         {view === "instructions" ? (
-          <section>
-            <p className="eyebrow">UnderCover Agent</p>
-            <h1>Agent instructions</h1>
-            <pre>{instructions}</pre>
-          </section>
+          <AgentInstructions instructions={instructions} wording={wording} />
         ) : (
           <>
             {selected ? (

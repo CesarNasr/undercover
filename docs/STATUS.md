@@ -8,6 +8,23 @@ The backend independently blocks payouts above $1,000 until an eligible handler
 signs off. The payment must match the stored approval exactly and can happen
 only once. Decisions, sign-offs, activity and payments survive restart.
 
+## Built
+
+- **Backend:** FastAPI endpoints backed by SQLite, seeded business records,
+  claim decisions and run activity, handler sign-off, and simulated payments
+  with the $1,000 approval barrier and duplicate-payment protection.
+- **Agent:** LangChain agent on OpenRouter with the `MODEL_NAME` override. Reads
+  instructions, claims, policies, customer history, plans and policy wording
+  through backend tools; records approve, decline or refer with a payout and
+  policy references, and requests simulated payment.
+- **Dashboard:** Claims queue, full claim and customer/policy details, run controls,
+  live activity, decisions, handler sign-off and payment retry. The read-only
+  instructions screen describes the records the agent reads and displays its
+  instructions followed by the policy wording from the backend.
+- **E2E:** Playwright coverage of queue/detail navigation, instructions and policy
+  wording, mobile layout, all decision outcomes, and over-limit sign-off/payment
+  persistence, using an isolated database and scripted model.
+
 ## Setup and run
 
 Use Python 3.12, uv and Node 26. At the repository root:
@@ -51,7 +68,7 @@ npm run check
 
 Final `npm run check` exited 0 on November 22, 2026.
 The suite includes 16 Python tests, 11 component tests and five Chromium
-scenarios. Python coverage is 99.66%; dashboard statement coverage is 97.16%.
+scenarios. Python coverage is 99.66%; dashboard statement coverage is 97.24%.
 The browser suite starts an isolated temporary database and a scripted LangChain
 model through `e2e/server.py`; it never reuses a development backend. No automated
 check calls OpenRouter. Screenshots are written to ignored `e2e/test-results/`.
@@ -79,3 +96,8 @@ Lint dependency repair: Python and frontend checks pass with the pinned plugins.
 The standard full command was blocked at browser startup by an existing server
 on port 8000; all five browser scenarios passed with temporary configurations
 on backend port 8001. The existing server was left running.
+
+November 24 instructions-screen update: Python and frontend checks pass. All five
+browser scenarios pass on isolated backend port 8001, including the expanded
+read-only instructions and policy wording. The development backend on 8000 was
+left running.

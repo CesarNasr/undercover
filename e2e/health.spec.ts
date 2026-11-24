@@ -31,6 +31,21 @@ test("handlers can inspect the queue, claim and read-only instructions", async (
   await expect(
     page.getByText("You are the UnderCover Agent.", { exact: false }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      name: "What the agent reads before deciding a claim",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Policy wording", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Version 2026.1, for policies bought", { exact: false }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: "e2e/test-results/instructions.png",
+    fullPage: true,
+  });
   await expect(page.getByRole("textbox")).toHaveCount(0);
 });
 

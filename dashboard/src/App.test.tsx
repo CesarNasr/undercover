@@ -28,6 +28,8 @@ function mock(data: Claim[] = [claim]) {
       let result: unknown = {};
       if (url === "/api/claims") result = data;
       else if (url === "/api/instructions") result = "Read policy wording";
+      else if (url === "/api/policy-wording")
+        result = "Policy contract version 2026.1";
       else if (url.includes("/claims/")) result = data[0];
       else if (url === "/api/handlers")
         result = [
@@ -48,6 +50,14 @@ it("loads the queue, full claim and instructions", async () => {
   expect(await screen.findByText("Flight canceled")).toBeDefined();
   fireEvent.click(screen.getByText("Agent instructions"));
   expect(screen.getByText("Read policy wording")).toBeDefined();
+  expect(
+    screen.getByRole("heading", {
+      name: "What the agent reads before deciding a claim",
+    }),
+  ).toBeDefined();
+  expect(screen.getByText("The customer’s history:")).toBeDefined();
+  expect(screen.getByText("Policy contract version 2026.1")).toBeDefined();
+  expect(screen.queryByRole("textbox")).toBeNull();
   fireEvent.click(screen.getByText("Claims queue"));
   expect(screen.getByText("Flight canceled")).toBeDefined();
 });
