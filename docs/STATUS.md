@@ -16,7 +16,8 @@ only once. Decisions, sign-offs, activity and payments survive restart.
 - **Agent:** LangChain agent on OpenRouter with the `MODEL_NAME` override. Reads
   instructions, claims, policies, customer history, plans and policy wording
   through backend tools; records approve, decline or refer with a payout and
-  policy references, and requests simulated payment.
+  policy references, and requests simulated payment. The CLI can process one
+  waiting claim or all waiting claims sequentially and print saved decisions.
 - **Dashboard:** Claims queue, full claim and customer/policy details, run controls,
   live activity, decisions, handler sign-off and payment retry. The read-only
   instructions screen describes the records the agent reads and displays its
@@ -38,6 +39,7 @@ only once. Decisions, sign-offs, activity and payments survive restart.
 | `backend/workflow.py` | `sign_off(claim_id, body)` | Records an eligible handler's approval of an over-limit payout. |
 | `backend/workflow.py` | `pay(claim_id, body)` | Checks the full approved amount and sign-off, then records one simulated payment. |
 | `agent/main.py` | `run(claim_id, thread_id)` | Runs the LangChain agent for one claim and returns its final reply; decisions are saved through API tools. |
+| `agent/cli.py` | `main(argv)`, `process_claim(client, claim)` | Select waiting claims, submit runs through the API, wait for completion and print decisions and counts. |
 | `agent/main.py` | `model()` | Builds the OpenRouter model client using `MODEL_NAME` or the default model. |
 | Inside `run()` | `read_context()`, `record_decision(...)`, `request_payment(amount)` | Agent tools that read evidence, save a decision and request payment through the backend. |
 | `dashboard/src/api.ts` | `api<T>(path, body?)` | Fetches API data, or posts an action when a body is supplied. |
@@ -65,6 +67,33 @@ Put `OPENROUTER_API_KEY` in the root `.env`. The default model is
 `openai/gpt-6-luna` with low reasoning effort. Set `MODEL_NAME` to override it,
 for example `openrouter/free`. The agent's `BACKEND_URL` defaults to
 `http://localhost:8000`; change it only when running the API elsewhere.
+
+### Run claims from the terminal
+
+Keep `npm run dev` running, then use a second terminal at the repository root:
+
+```text
+uv run -m agent
+uv run -m agent CLM-1001
+```
+
+The first command processes every waiting claim in the order returned by the
+queue API, one at a time. The second processes only the named claim. Use an
+actual ID from your queue; this seed data starts at `CLM-1001`, not `CLM-001`.
+Both commands submit the same backend agent workflow used by the dashboard,
+using the real OpenRouter model configured in the backend's `.env` (currently
+`MODEL_NAME=openrouter/free`). Automated CLI tests mock HTTP and never call a
+real model.
+
+Each completed run prints the saved outcome, payout, queue state, explanation,
+calculation and policy references. A final count reports decisions and skipped
+claims. Existing decisions and active or sign-off-pending claims are skipped.
+Over-limit payouts still require handler sign-off in the dashboard.
+
+The CLI stops on a run without a decision or after waiting ten minutes, rather
+than starting more claims after a failure. A timeout or Ctrl+C does not cancel
+an already submitted backend run; check activity before retrying. If payment
+fails after a decision is saved, inspect the payment state in the dashboard.
 
 ### Stop and restart
 
@@ -167,8 +196,8 @@ npm run check
 ```
 
 Final `npm run check` exited 0 on November 22, 2026.
-The suite includes 16 Python tests, 11 component tests and five Chromium
-scenarios. Python coverage is 99.66%; dashboard statement coverage is 97.24%.
+The suite includes 26 Python tests, 11 component tests and five Chromium
+scenarios. Python coverage is 98.92%; dashboard statement coverage is 97.24%.
 The browser suite starts an isolated temporary database and a scripted LangChain
 model through `e2e/server.py`; it never reuses a development backend. No automated
 check calls OpenRouter. Screenshots are written to ignored `e2e/test-results/`.
@@ -201,3 +230,9 @@ November 24 instructions-screen update: Python and frontend checks pass. All fiv
 browser scenarios pass on isolated backend port 8001, including the expanded
 read-only instructions and policy wording. The development backend on 8000 was
 left running.
+
+CLI update: 26 Python tests pass (including a CLI-to-backend-to-stub-model
+integration test), with 100% coverage of `agent/cli.py`. Frontend checks pass.
+The required full check stops at browser startup because the development backend
+occupies port 8000; it was left running. No live model runs were started during
+implementation.
