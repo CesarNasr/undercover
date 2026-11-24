@@ -25,6 +25,25 @@ only once. Decisions, sign-offs, activity and payments survive restart.
   wording, mobile layout, all decision outcomes, and over-limit sign-off/payment
   persistence, using an isolated database and scripted model.
 
+### Main functions
+
+| Location | Function | What it does |
+| --- | --- | --- |
+| `backend/store.py` | `initialize()` | Creates the SQLite table and inserts missing seed records without overwriting saved work. |
+| `backend/store.py` | `database()` | Opens and closes a database transaction; serializes writes. |
+| `backend/runs.py` | `start(claim_id, thread_id)` | Reserves a waiting claim and records the start of a run. |
+| `backend/runs.py` | `execute(claim_id, thread_id)` | Calls the agent in the background and records completion or failure. |
+| `backend/runs.py` | `recover()` | Releases interrupted runs when the backend restarts. |
+| `backend/workflow.py` | `decide(claim_id, body)` | Validates the active run and stores its decision, payout and explanation. |
+| `backend/workflow.py` | `sign_off(claim_id, body)` | Records an eligible handler's approval of an over-limit payout. |
+| `backend/workflow.py` | `pay(claim_id, body)` | Checks the full approved amount and sign-off, then records one simulated payment. |
+| `agent/main.py` | `run(claim_id, thread_id)` | Runs the LangChain agent for one claim and returns its final reply; decisions are saved through API tools. |
+| `agent/main.py` | `model()` | Builds the OpenRouter model client using `MODEL_NAME` or the default model. |
+| Inside `run()` | `read_context()`, `record_decision(...)`, `request_payment(amount)` | Agent tools that read evidence, save a decision and request payment through the backend. |
+| `dashboard/src/api.ts` | `api<T>(path, body?)` | Fetches API data, or posts an action when a body is supplied. |
+| `dashboard/src/` | `App()`, `ClaimDetail({ id })`, `Actions({ claim, onChange })`, `AgentInstructions({ instructions, wording })` | Render navigation/queue, claim detail, handler controls and the read-only instructions screen. |
+| `e2e/server.py` | `scripted(claim_id, thread_id)` | Runs the real agent tools with scripted model replies for browser tests, without OpenRouter calls. |
+
 ## Setup and run
 
 Use Python 3.12, uv and Node 26. At the repository root:
@@ -35,7 +54,8 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173. The backend is at http://localhost:8000 and its API
+Open the dashboard URL printed by Vite, normally http://localhost:5173.
+If that port is occupied, Vite may choose 5174 or another port. The backend is at http://localhost:8000 and its API
 schema is at http://localhost:8000/docs. Select a claim and choose **Run agent**.
 An over-limit approval needs a handler selection and **Sign off payout**, then
 **Record simulated payment**. An unpaid approval can retry payment without
@@ -46,13 +66,93 @@ Put `OPENROUTER_API_KEY` in the root `.env`. The default model is
 for example `openrouter/free`. The agent's `BACKEND_URL` defaults to
 `http://localhost:8000`; change it only when running the API elsewhere.
 
-## Persistence and reset
+### Stop and restart
 
-The ignored local database is `data/pilot.sqlite3`. `UNDERCOVER_DB` can select an
-alternate database file. Startup inserts missing seed records without replacing
-saved work. To deliberately reset all local decisions, stop the backend and
-remove `data/pilot.sqlite3` with your file explorer, then restart. This loses all
-local run activity, decisions, sign-offs and simulated payments.
+Keep the terminal running while using the dashboard. Press **Ctrl+C** there to
+stop both servers. Run `npm run dev` again to restart them, including after
+changing `.env`. Starting a second copy can fail because port 8000 is occupied;
+stop the earlier copy in its terminal first.
+
+### Database startup and reseeding
+
+SQLite is a local file, so there is no separate database server to start. The
+backend creates `data/pilot.sqlite3` on its first startup and seeds the 25 claims.
+Later startups keep existing decisions, activity, sign-offs and payments. Refresh
+the dashboard after restarting.
+
+To create the database or insert missing seed records from the CLI without
+starting the app, run this from the repository root (macOS or PowerShell):
+
+```text
+uv run python -c "from dotenv import load_dotenv; load_dotenv(override=True); from backend.store import initialize; initialize()"
+```
+
+This does not reset existing claims or update existing seeded wording/instructions.
+A full reset reloads the current seed files and instructions into a new database.
+
+### Clear and recreate the database
+
+First stop the app with **Ctrl+C**. Resetting deletes all local decisions, run
+activity, sign-offs and simulated payments; the seed files in `data/` and `.env`
+are kept. For a backup, copy the database while the app is stopped before deleting
+it. The commands below use the default database path.
+
+macOS (zsh):
+
+```bash
+# Optional backup; use a new filename to keep an earlier backup.
+cp data/pilot.sqlite3 data/pilot-backup.sqlite3
+# Clear the local database.
+rm -f data/pilot.sqlite3
+# Recreate and seed it on startup.
+npm run dev
+```
+
+Windows (PowerShell):
+
+```powershell
+# Optional backup; use a new filename to keep an earlier backup.
+Copy-Item data/pilot.sqlite3 data/pilot-backup.sqlite3
+# Clear the local database.
+Remove-Item data/pilot.sqlite3 -ErrorAction SilentlyContinue
+# Recreate and seed it on startup.
+npm run dev
+```
+
+Skip the optional backup command if the database does not exist yet. After a
+reset, the queue returns to 25 waiting claims, so decided claims can be run again.
+To restore a backup, stop the app, copy the backup over `data/pilot.sqlite3`
+(`cp` on macOS or `Copy-Item -Force` in PowerShell), and restart the app.
+
+### Use a separate local database
+
+`UNDERCOVER_DB` selects a different SQLite file; choose an existing parent folder.
+For example, start a separate demo database without clearing the default one:
+
+macOS:
+
+```bash
+export UNDERCOVER_DB=data/demo.sqlite3
+npm run dev
+# After stopping the app, return to the default database:
+unset UNDERCOVER_DB
+```
+
+PowerShell:
+
+```powershell
+$env:UNDERCOVER_DB = "data/demo.sqlite3"
+npm run dev
+# After stopping the app, return to the default database:
+Remove-Item Env:UNDERCOVER_DB
+```
+
+If `UNDERCOVER_DB` is also set in `.env`, remove that entry to return to the
+default database: the app loads `.env` with override enabled. When backing up or
+resetting an alternate database, substitute its actual file path in the commands.
+SQLite files under `data/` are ignored by git. Browser tests use their own temporary file.
+
+## Persistence and recovery
 
 Runs execute in the backend process and are not durable. Restarting releases an
 interrupted undecided claim for an explicit retry. A saved approval survives a
